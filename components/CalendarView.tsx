@@ -13,12 +13,13 @@ interface CalendarViewProps {
   onDateClick: (date: Date) => void;
   onEventClick: (event: CalendarEvent) => void;
   onUpdateEvent?: (event: CalendarEvent) => void;
+  onDeleteEvent?: (eventId: string) => void;
   onBackToDashboard: () => void;
 }
 
 type CalendarViewMode = 'all' | 'morning' | 'afternoon' | 'workday' | 'night';
 
-const CalendarView: React.FC<CalendarViewProps> = ({ events, onAddEvent, onDateClick, onEventClick, onUpdateEvent }) => {
+const CalendarView: React.FC<CalendarViewProps> = ({ events, onAddEvent, onDateClick, onEventClick, onUpdateEvent, onDeleteEvent }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [viewMode, setViewMode] = useState<CalendarViewMode>('all');
@@ -110,6 +111,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, onAddEvent, onDateC
                 onEventClick={onEventClick}
                 onTimeSlotClick={onDateClick}
                 onUpdateEvent={onUpdateEvent}
+                onDeleteEvent={onDeleteEvent}
                 onSwipePrev={() => setCurrentDate(prev => addDays(prev, -1))}
                 onSwipeNext={() => setCurrentDate(prev => addDays(prev, 1))}
                 onChangeDate={setCurrentDate}

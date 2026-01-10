@@ -1,12 +1,13 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { CalendarEvent, Patient } from '../types';
-import { XIcon, ClockIcon, MapPinIcon, SparklesIcon, UsersIcon, CalendarIcon } from './Icons';
+import { XIcon, ClockIcon, MapPinIcon, SparklesIcon, UsersIcon, CalendarIcon, TrashIcon } from './Icons';
 
 interface EventModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (event: CalendarEvent) => void;
+  onDelete?: (id: string) => void;
   initialDate?: Date;
   initialEvent?: CalendarEvent | null;
   patients?: Patient[];
@@ -36,7 +37,7 @@ const COLORS = [
   { value: 'canary', class: 'bg-yellow-200', ring: 'ring-yellow-200', defaultLabel: 'Alegre' },
 ];
 
-const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave, initialDate, initialEvent, patients = [] }) => {
+const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave, onDelete, initialDate, initialEvent, patients = [] }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
@@ -137,9 +138,9 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave, initia
       ></div>
 
       {/* Modal Content */}
-      <div className="relative bg-[var(--bg-glass-strong)] w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden scale-100 transition-all transform duration-200 border border-[var(--border-color)] max-h-[90vh] overflow-y-auto scrollbar-hide">
+      <div className="relative bg-[var(--bg-glass-strong)] w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden scale-100 transition-all transform duration-200 border border-[var(--border-color)] max-h-[90vh] overflow-y-auto scrollbar-hide flex flex-col">
         
-        <div className="flex items-center justify-between p-8 pb-4">
+        <div className="flex items-center justify-between p-8 pb-4 shrink-0">
           <h2 className="text-xl font-bold text-[var(--text-primary)]">
             {initialEvent ? 'Editar' : 'Criar Evento'}
           </h2>
@@ -148,168 +149,182 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave, initia
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-8 pt-2 space-y-6">
-          {/* Title Input */}
-          <div>
-            <input
-              type="text"
-              placeholder="Nome do evento"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full text-3xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-muted)] border-none p-0 focus:ring-0 bg-transparent"
-              autoFocus
-            />
-          </div>
+        <div className="flex-1 overflow-y-auto p-8 pt-2">
+            <form id="event-form" onSubmit={handleSubmit} className="space-y-6">
+            {/* Title Input */}
+            <div>
+                <input
+                type="text"
+                placeholder="Nome do evento"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full text-3xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-muted)] border-none p-0 focus:ring-0 bg-transparent"
+                autoFocus
+                />
+            </div>
 
-          <div className="grid grid-cols-2 gap-4">
-             <div className="space-y-1">
-                <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest pl-1">Início</label>
-                <div className="flex items-center bg-[var(--bg-element)] border border-[var(--border-color)] hover:border-[var(--text-muted)] rounded-2xl px-4 py-3 text-[var(--text-secondary)] focus-within:bg-[var(--bg-element)] focus-within:border-[var(--accent-color)] focus-within:ring-4 focus-within:ring-[var(--accent-bg)] transition-all relative">
-                    {/* Visual Calendar Trigger */}
-                    <button type="button" onClick={triggerStartPicker} className="mr-2 text-[var(--text-muted)] hover:text-[var(--accent-color)]">
-                        <CalendarIcon className="w-4 h-4" />
-                    </button>
-                    <input
-                        ref={startInputRef}
-                        type="datetime-local"
-                        value={start}
-                        onChange={(e) => setStart(e.target.value)}
-                        className="bg-transparent text-sm w-full outline-none font-semibold text-[var(--text-primary)]"
-                        required
-                    />
-                </div>
-             </div>
-             
-             {!noEndTime ? (
-                 <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest pl-1">Fim</label>
-                    <div className="flex items-center bg-[var(--bg-element)] border border-[var(--border-color)] hover:border-[var(--text-muted)] rounded-2xl px-4 py-3 text-[var(--text-secondary)] focus-within:bg-[var(--bg-element)] focus-within:border-[var(--accent-color)] focus-within:ring-4 focus-within:ring-[var(--accent-bg)] transition-all">
-                        <button type="button" onClick={triggerEndPicker} className="mr-2 text-[var(--text-muted)] hover:text-[var(--accent-color)]">
+            <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest pl-1">Início</label>
+                    <div className="flex items-center bg-[var(--bg-element)] border border-[var(--border-color)] hover:border-[var(--text-muted)] rounded-2xl px-4 py-3 text-[var(--text-secondary)] focus-within:bg-[var(--bg-element)] focus-within:border-[var(--accent-color)] focus-within:ring-4 focus-within:ring-[var(--accent-bg)] transition-all relative">
+                        {/* Visual Calendar Trigger */}
+                        <button type="button" onClick={triggerStartPicker} className="mr-2 text-[var(--text-muted)] hover:text-[var(--accent-color)]">
                             <CalendarIcon className="w-4 h-4" />
                         </button>
                         <input
-                            ref={endInputRef}
+                            ref={startInputRef}
                             type="datetime-local"
-                            value={end}
-                            onChange={(e) => setEnd(e.target.value)}
+                            value={start}
+                            onChange={(e) => setStart(e.target.value)}
                             className="bg-transparent text-sm w-full outline-none font-semibold text-[var(--text-primary)]"
                             required
                         />
                     </div>
-                 </div>
-             ) : (
-                <div className="space-y-1 opacity-50 pointer-events-none">
-                    <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest pl-1">Fim</label>
-                    <div className="flex items-center bg-[var(--bg-element)] border border-[var(--border-color)] rounded-2xl px-4 py-3 text-[var(--text-secondary)]">
-                        <CalendarIcon className="w-4 h-4 mr-2" />
-                        <span className="text-sm font-semibold">Automático (+50m)</span>
-                    </div>
                 </div>
-             )}
-          </div>
-
-          <div className="flex items-center gap-2 pl-1">
-              <input 
-                  type="checkbox" 
-                  id="noEndTime" 
-                  checked={noEndTime} 
-                  onChange={(e) => setNoEndTime(e.target.checked)}
-                  className="w-4 h-4 rounded-md border-[var(--border-color)] text-[var(--accent-color)] focus:ring-[var(--accent-bg)]"
-              />
-              <label htmlFor="noEndTime" className="text-xs font-bold text-[var(--text-secondary)] cursor-pointer select-none">Sem horário de fim (Duração padrão)</label>
-          </div>
-          
-          {/* Patient Selection */}
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest pl-1">Paciente (Opcional)</label>
-            <div className="flex items-center bg-[var(--bg-element)] border border-[var(--border-color)] hover:border-[var(--text-muted)] rounded-2xl px-4 py-3 text-[var(--text-secondary)] focus-within:bg-[var(--bg-element)] focus-within:border-[var(--accent-color)] focus-within:ring-4 focus-within:ring-[var(--accent-bg)] transition-all">
-                <UsersIcon className="w-4 h-4 text-[var(--text-muted)] mr-3" />
-                <select
-                    value={selectedPatientId}
-                    onChange={(e) => setSelectedPatientId(e.target.value)}
-                    className="bg-transparent text-sm w-full outline-none text-[var(--text-primary)] font-medium"
-                >
-                    <option value="">Nenhum</option>
-                    {patients.map(p => (
-                        <option key={p.id} value={p.id}>{p.name}</option>
-                    ))}
-                </select>
+                
+                {!noEndTime ? (
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest pl-1">Fim</label>
+                        <div className="flex items-center bg-[var(--bg-element)] border border-[var(--border-color)] hover:border-[var(--text-muted)] rounded-2xl px-4 py-3 text-[var(--text-secondary)] focus-within:bg-[var(--bg-element)] focus-within:border-[var(--accent-color)] focus-within:ring-4 focus-within:ring-[var(--accent-bg)] transition-all">
+                            <button type="button" onClick={triggerEndPicker} className="mr-2 text-[var(--text-muted)] hover:text-[var(--accent-color)]">
+                                <CalendarIcon className="w-4 h-4" />
+                            </button>
+                            <input
+                                ref={endInputRef}
+                                type="datetime-local"
+                                value={end}
+                                onChange={(e) => setEnd(e.target.value)}
+                                className="bg-transparent text-sm w-full outline-none font-semibold text-[var(--text-primary)]"
+                                required
+                            />
+                        </div>
+                    </div>
+                ) : (
+                    <div className="space-y-1 opacity-50 pointer-events-none">
+                        <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest pl-1">Fim</label>
+                        <div className="flex items-center bg-[var(--bg-element)] border border-[var(--border-color)] rounded-2xl px-4 py-3 text-[var(--text-secondary)]">
+                            <CalendarIcon className="w-4 h-4 mr-2" />
+                            <span className="text-sm font-semibold">Automático (+50m)</span>
+                        </div>
+                    </div>
+                )}
             </div>
-          </div>
 
-          {/* Recurrence Selection */}
-          <div className="space-y-1">
-              <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest pl-1">Repetição</label>
-              <div className="flex gap-2">
-                 {['none', 'daily', 'weekly', 'monthly'].map((opt) => (
-                    <button
-                        key={opt}
-                        type="button"
-                        onClick={() => setRecurrence(opt as any)}
-                        className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-all ${recurrence === opt ? 'bg-[var(--accent-color)] text-[var(--bg-app)] border-[var(--accent-color)]' : 'bg-[var(--bg-element)] text-[var(--text-secondary)] border-[var(--border-color)] hover:border-[var(--text-muted)]'}`}
+            <div className="flex items-center gap-2 pl-1">
+                <input 
+                    type="checkbox" 
+                    id="noEndTime" 
+                    checked={noEndTime} 
+                    onChange={(e) => setNoEndTime(e.target.checked)}
+                    className="w-4 h-4 rounded-md border-[var(--border-color)] text-[var(--accent-color)] focus:ring-[var(--accent-bg)]"
+                />
+                <label htmlFor="noEndTime" className="text-xs font-bold text-[var(--text-secondary)] cursor-pointer select-none">Sem horário de fim (Duração padrão)</label>
+            </div>
+            
+            {/* Patient Selection */}
+            <div className="space-y-1">
+                <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest pl-1">Paciente (Opcional)</label>
+                <div className="flex items-center bg-[var(--bg-element)] border border-[var(--border-color)] hover:border-[var(--text-muted)] rounded-2xl px-4 py-3 text-[var(--text-secondary)] focus-within:bg-[var(--bg-element)] focus-within:border-[var(--accent-color)] focus-within:ring-4 focus-within:ring-[var(--accent-bg)] transition-all">
+                    <UsersIcon className="w-4 h-4 text-[var(--text-muted)] mr-3" />
+                    <select
+                        value={selectedPatientId}
+                        onChange={(e) => setSelectedPatientId(e.target.value)}
+                        className="bg-transparent text-sm w-full outline-none text-[var(--text-primary)] font-medium"
                     >
-                        {opt === 'none' && 'Não'}
-                        {opt === 'daily' && 'Diário'}
-                        {opt === 'weekly' && 'Semanal'}
-                        {opt === 'monthly' && 'Mensal'}
-                    </button>
-                 ))}
-              </div>
-          </div>
-
-          <div className="space-y-1">
-             <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest pl-1">Onde?</label>
-             <div className="flex items-center bg-[var(--bg-element)] border border-[var(--border-color)] hover:border-[var(--text-muted)] rounded-2xl px-4 py-3 text-[var(--text-secondary)] focus-within:bg-[var(--bg-element)] focus-within:border-[var(--accent-color)] focus-within:ring-4 focus-within:ring-[var(--accent-bg)] transition-all">
-                <MapPinIcon className="w-4 h-4 text-[var(--text-muted)] mr-3" />
-                <input
-                    type="text"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    placeholder="Adicionar localização"
-                    className="bg-transparent text-sm w-full outline-none text-[var(--text-primary)] placeholder:text-[var(--text-muted)] font-medium"
-                />
-             </div>
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest pl-1">Notas</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Detalhes adicionais..."
-              className="w-full bg-[var(--bg-element)] border border-[var(--border-color)] hover:border-[var(--text-muted)] rounded-2xl p-4 text-sm text-[var(--text-primary)] min-h-[100px] outline-none focus:bg-[var(--bg-element)] focus:border-[var(--accent-color)] focus:ring-4 focus:ring-[var(--accent-bg)] resize-none font-medium transition-all"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest pl-1">Categoria e Cor</label>
-            <div className="grid grid-cols-6 gap-2 p-2 bg-[var(--bg-element)] rounded-2xl border border-[var(--border-color)]">
-              {COLORS.map((c) => (
-                <button
-                  key={c.value}
-                  type="button"
-                  onClick={() => {
-                    setColor(c.value);
-                    setCustomLabel(c.defaultLabel);
-                  }}
-                  title={c.defaultLabel}
-                  className={`w-full aspect-square rounded-full ${c.class} transition-all shadow-sm flex items-center justify-center ${
-                    color === c.value ? `ring-2 ring-offset-2 ring-offset-[var(--bg-app)] ${c.ring} scale-100` : 'scale-75 hover:scale-90 opacity-60 hover:opacity-100'
-                  }`}
-                />
-              ))}
+                        <option value="">Nenhum</option>
+                        {patients.map(p => (
+                            <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                    </select>
+                </div>
             </div>
-            {/* Custom Label Input */}
-            <input 
-                type="text" 
-                value={customLabel}
-                onChange={(e) => setCustomLabel(e.target.value)}
-                placeholder="Nome da categoria..."
-                className="w-full text-xs font-bold text-center bg-transparent outline-none text-[var(--text-secondary)] border-b border-[var(--border-color)] focus:border-[var(--accent-color)] pb-1"
-            />
-          </div>
 
-          <div className="pt-6 flex justify-end gap-3 mt-4 border-t border-[var(--border-color)]">
+            {/* Recurrence Selection */}
+            <div className="space-y-1">
+                <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest pl-1">Repetição</label>
+                <div className="flex gap-2">
+                    {['none', 'daily', 'weekly', 'monthly'].map((opt) => (
+                        <button
+                            key={opt}
+                            type="button"
+                            onClick={() => setRecurrence(opt as any)}
+                            className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-all ${recurrence === opt ? 'bg-[var(--accent-color)] text-[var(--bg-app)] border-[var(--accent-color)]' : 'bg-[var(--bg-element)] text-[var(--text-secondary)] border-[var(--border-color)] hover:border-[var(--text-muted)]'}`}
+                        >
+                            {opt === 'none' && 'Não'}
+                            {opt === 'daily' && 'Diário'}
+                            {opt === 'weekly' && 'Semanal'}
+                            {opt === 'monthly' && 'Mensal'}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            <div className="space-y-1">
+                <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest pl-1">Onde?</label>
+                <div className="flex items-center bg-[var(--bg-element)] border border-[var(--border-color)] hover:border-[var(--text-muted)] rounded-2xl px-4 py-3 text-[var(--text-secondary)] focus-within:bg-[var(--bg-element)] focus-within:border-[var(--accent-color)] focus-within:ring-4 focus-within:ring-[var(--accent-bg)] transition-all">
+                    <MapPinIcon className="w-4 h-4 text-[var(--text-muted)] mr-3" />
+                    <input
+                        type="text"
+                        value={location}
+                        onChange={(e) => setLocation(e.target.value)}
+                        placeholder="Adicionar localização"
+                        className="bg-transparent text-sm w-full outline-none text-[var(--text-primary)] placeholder:text-[var(--text-muted)] font-medium"
+                    />
+                </div>
+            </div>
+
+            <div className="space-y-1">
+                <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest pl-1">Notas</label>
+                <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Detalhes adicionais..."
+                className="w-full bg-[var(--bg-element)] border border-[var(--border-color)] hover:border-[var(--text-muted)] rounded-2xl p-4 text-sm text-[var(--text-primary)] min-h-[100px] outline-none focus:bg-[var(--bg-element)] focus:border-[var(--accent-color)] focus:ring-4 focus:ring-[var(--accent-bg)] resize-none font-medium transition-all"
+                />
+            </div>
+
+            <div className="space-y-2">
+                <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest pl-1">Categoria e Cor</label>
+                <div className="grid grid-cols-6 gap-2 p-2 bg-[var(--bg-element)] rounded-2xl border border-[var(--border-color)]">
+                {COLORS.map((c) => (
+                    <button
+                    key={c.value}
+                    type="button"
+                    onClick={() => {
+                        setColor(c.value);
+                        setCustomLabel(c.defaultLabel);
+                    }}
+                    title={c.defaultLabel}
+                    className={`w-full aspect-square rounded-full ${c.class} transition-all shadow-sm flex items-center justify-center ${
+                        color === c.value ? `ring-2 ring-offset-2 ring-offset-[var(--bg-app)] ${c.ring} scale-100` : 'scale-75 hover:scale-90 opacity-60 hover:opacity-100'
+                    }`}
+                    />
+                ))}
+                </div>
+                {/* Custom Label Input */}
+                <input 
+                    type="text" 
+                    value={customLabel}
+                    onChange={(e) => setCustomLabel(e.target.value)}
+                    placeholder="Nome da categoria..."
+                    className="w-full text-xs font-bold text-center bg-transparent outline-none text-[var(--text-secondary)] border-b border-[var(--border-color)] focus:border-[var(--accent-color)] pb-1"
+                />
+            </div>
+            </form>
+        </div>
+
+        {/* FOOTER ACTIONS - OUTSIDE FORM */}
+        <div className="p-8 pt-4 border-t border-[var(--border-color)] flex justify-end gap-3 shrink-0">
+            {onDelete && initialEvent && (
+                <button
+                    type="button"
+                    onClick={() => onDelete(initialEvent.id)}
+                    className="px-4 py-3 text-sm font-bold text-rose-500 bg-rose-50 hover:bg-rose-100 rounded-2xl transition-colors mr-auto flex items-center gap-2"
+                >
+                    <TrashIcon className="w-5 h-5" />
+                    <span className="hidden sm:inline">Excluir</span>
+                </button>
+            )}
             <button
                 type="button"
                 onClick={onClose}
@@ -319,12 +334,12 @@ const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave, initia
             </button>
             <button
               type="submit"
+              form="event-form"
               className="px-8 py-3 text-sm font-bold text-[var(--bg-app)] bg-[var(--text-primary)] rounded-2xl hover:opacity-90 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all border border-transparent"
             >
               Salvar
             </button>
-          </div>
-        </form>
+        </div>
       </div>
     </div>
   );

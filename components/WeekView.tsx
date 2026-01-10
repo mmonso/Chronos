@@ -2,7 +2,7 @@
 import React, { useMemo, useEffect, useRef, useState, useCallback } from 'react';
 import { CalendarEvent } from '../types';
 import { getStartOfWeek, addDays, isSameDay, getRecurringEventsForWeek } from '../utils/dateUtils';
-import { CheckIcon } from './Icons';
+import { CheckIcon, TrashIcon } from './Icons';
 
 interface WeekViewProps {
   currentDate: Date;
@@ -10,7 +10,8 @@ interface WeekViewProps {
   viewMode?: 'all' | 'morning' | 'afternoon' | 'workday' | 'night';
   onEventClick: (event: CalendarEvent) => void;
   onTimeSlotClick: (date: Date) => void;
-  onUpdateEvent?: (event: CalendarEvent) => void; 
+  onUpdateEvent?: (event: CalendarEvent) => void;
+  onDeleteEvent?: (eventId: string) => void;
   onSwipePrev?: () => void;
   onSwipeNext?: () => void;
   onChangeDate?: (date: Date) => void;
@@ -59,6 +60,7 @@ const WeekView: React.FC<WeekViewProps> = ({
     onEventClick, 
     onTimeSlotClick, 
     onUpdateEvent, 
+    onDeleteEvent,
     onSwipePrev, 
     onSwipeNext 
 }) => {
@@ -658,6 +660,20 @@ const WeekView: React.FC<WeekViewProps> = ({
                         </button>
                     );
                 })}
+                {/* Delete Option */}
+                {onDeleteEvent && (
+                    <div className="col-span-6 border-t border-[var(--border-color)] mt-2 pt-2">
+                        <button
+                            onClick={() => {
+                                onDeleteEvent(contextMenu.eventId);
+                                setContextMenu(null);
+                            }}
+                            className="w-full flex items-center justify-center gap-2 text-xs font-bold text-rose-500 hover:bg-rose-50 py-2 rounded-xl transition-colors"
+                        >
+                            <TrashIcon className="w-4 h-4" /> Excluir Evento
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     )}

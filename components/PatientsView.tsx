@@ -240,7 +240,6 @@ const PatientsView: React.FC<PatientsViewProps> = ({
                                 </div>
                             )}
 
-                            {/* Legacy Tabs for Notes and Finance omitted for brevity in this XML part, assume they remain */}
                             {activeTab === 'notes' && (
                                 <div className="space-y-6">
                                     <div className="flex justify-between items-center">
@@ -259,6 +258,25 @@ const PatientsView: React.FC<PatientsViewProps> = ({
                                     </div>
                                 </div>
                             )}
+                            
+                             {activeTab === 'finance' && (
+                                <div className="space-y-6">
+                                    <div className="flex justify-between items-center">
+                                        <h3 className="text-sm font-bold text-[var(--text-muted)] uppercase">Histórico de Pagamentos</h3>
+                                    </div>
+                                    <div className="space-y-2">
+                                        {patientPayments.map(pay => (
+                                            <div key={pay.id} className="flex justify-between items-center p-4 bg-[var(--bg-element)] border border-[var(--border-color)] rounded-2xl">
+                                                 <div className="flex flex-col">
+                                                     <span className="text-xs font-bold text-[var(--text-primary)]">{pay.description}</span>
+                                                     <span className="text-[10px] text-[var(--text-muted)]">{new Date(pay.date).toLocaleDateString()}</span>
+                                                 </div>
+                                                 <span className="font-bold text-emerald-600">R$ {pay.amount.toFixed(2)}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </>
@@ -270,7 +288,123 @@ const PatientsView: React.FC<PatientsViewProps> = ({
             )}
         </div>
 
-        {/* Note Modal Omitted for brevity, assume its existence */}
+        {/* MODAL ADD/EDIT PATIENT */}
+        {isFormOpen && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setIsFormOpen(false)}></div>
+                <div className="relative bg-[var(--bg-glass-strong)] w-full max-w-md rounded-[2.5rem] shadow-2xl p-8 border border-[var(--border-color)] animate-enter">
+                    <h2 className="text-xl font-bold font-serif mb-6 text-[var(--text-primary)]">
+                        {formData.id ? 'Editar Paciente' : 'Novo Paciente'}
+                    </h2>
+                    <form onSubmit={handleSavePatient} className="space-y-4">
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest pl-1">Nome Completo</label>
+                            <input
+                                className="w-full bg-[var(--bg-element)] border border-[var(--border-color)] rounded-xl p-3 outline-none focus:border-[var(--accent-color)] text-[var(--text-primary)] font-medium"
+                                placeholder="Ex: João da Silva"
+                                required
+                                value={formData.name || ''}
+                                onChange={e => setFormData({...formData, name: e.target.value})}
+                                autoFocus
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest pl-1">Telefone</label>
+                                <input
+                                    className="w-full bg-[var(--bg-element)] border border-[var(--border-color)] rounded-xl p-3 outline-none focus:border-[var(--accent-color)] text-[var(--text-primary)] font-medium"
+                                    placeholder="(00) 00000-0000"
+                                    value={formData.phone || ''}
+                                    onChange={e => setFormData({...formData, phone: e.target.value})}
+                                />
+                            </div>
+                             <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest pl-1">Valor Sessão</label>
+                                <input
+                                    type="number"
+                                    className="w-full bg-[var(--bg-element)] border border-[var(--border-color)] rounded-xl p-3 outline-none focus:border-[var(--accent-color)] text-[var(--text-primary)] font-medium"
+                                    placeholder="R$ 0,00"
+                                    value={formData.consultationValue || ''}
+                                    onChange={e => setFormData({...formData, consultationValue: Number(e.target.value)})}
+                                />
+                            </div>
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest pl-1">Email</label>
+                            <input
+                                type="email"
+                                className="w-full bg-[var(--bg-element)] border border-[var(--border-color)] rounded-xl p-3 outline-none focus:border-[var(--accent-color)] text-[var(--text-primary)] font-medium"
+                                placeholder="email@exemplo.com"
+                                value={formData.email || ''}
+                                onChange={e => setFormData({...formData, email: e.target.value})}
+                            />
+                        </div>
+                        
+                        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-[var(--border-color)]">
+                            <button type="button" onClick={() => setIsFormOpen(false)} className="px-5 py-2.5 rounded-xl text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--bg-element)] transition-colors">Cancelar</button>
+                            <button type="submit" className="px-6 py-2.5 rounded-xl bg-[var(--text-primary)] text-[var(--bg-app)] text-xs font-bold hover:opacity-90 shadow-md">Salvar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        )}
+
+        {/* MODAL NOTE */}
+        {isNoteModalOpen && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setIsNoteModalOpen(false)}></div>
+                <div className="relative bg-[var(--bg-glass-strong)] w-full max-w-2xl rounded-[2.5rem] shadow-2xl p-8 border border-[var(--border-color)] animate-enter flex flex-col max-h-[90vh]">
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-xl font-bold font-serif text-[var(--text-primary)]">
+                            {editingNoteId ? 'Editar Relato' : 'Novo Relato de Sessão'}
+                        </h2>
+                         <button 
+                            type="button" 
+                            onClick={async () => {
+                                if (!noteContent) return;
+                                setIsImprovingNote(true);
+                                const improved = await improveSessionNote(noteContent);
+                                setNoteContent(improved);
+                                setIsImprovingNote(false);
+                            }}
+                            disabled={isImprovingNote || !noteContent}
+                            className="flex items-center gap-2 px-3 py-1.5 bg-indigo-100 text-indigo-600 rounded-lg text-[10px] font-bold uppercase tracking-wide hover:bg-indigo-200 transition-colors disabled:opacity-50"
+                        >
+                            {isImprovingNote ? <LoaderIcon className="w-3 h-3 animate-spin" /> : <SparklesIcon className="w-3 h-3" />}
+                            Melhorar com IA
+                        </button>
+                    </div>
+                    
+                    <form onSubmit={handleSaveNote} className="flex flex-col flex-1 min-h-0 space-y-4">
+                         <div className="flex items-center gap-4">
+                             <div className="flex items-center bg-[var(--bg-element)] border border-[var(--border-color)] rounded-xl px-3 py-2 focus-within:border-[var(--accent-color)]">
+                                <ClockIcon className="w-4 h-4 text-[var(--text-muted)] mr-2" />
+                                <input 
+                                    type="datetime-local"
+                                    value={noteDate}
+                                    onChange={(e) => setNoteDate(e.target.value)}
+                                    className="bg-transparent text-xs font-bold text-[var(--text-secondary)] outline-none"
+                                    required
+                                />
+                             </div>
+                         </div>
+                         
+                        <textarea
+                            className="flex-1 w-full bg-[var(--bg-element)] border border-[var(--border-color)] rounded-2xl p-5 text-sm leading-relaxed outline-none focus:border-[var(--accent-color)] resize-none font-medium"
+                            placeholder="Descreva o que foi abordado na sessão, observações clínicas, etc..."
+                            value={noteContent}
+                            onChange={e => setNoteContent(e.target.value)}
+                            autoFocus
+                        />
+
+                        <div className="flex justify-end gap-3 pt-2">
+                            <button type="button" onClick={() => setIsNoteModalOpen(false)} className="px-5 py-2.5 rounded-xl text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--bg-element)] transition-colors">Cancelar</button>
+                            <button type="submit" className="px-6 py-2.5 rounded-xl bg-[var(--text-primary)] text-[var(--bg-app)] text-xs font-bold hover:opacity-90 shadow-md">Salvar Relato</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        )}
     </div>
   );
 };
